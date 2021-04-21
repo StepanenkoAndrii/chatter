@@ -9,8 +9,7 @@
         <div class="div-all-chats">
           <div v-for="room in rooms" :key="room.id">
             <span :id="room.id" v-on:click="showMessages">
-              <div class="div-image">{{room.name[0]}}</div>
-              <span>{{ room.name }}</span>
+              {{ room.name }}
             </span>
           </div>
         </div>
@@ -204,19 +203,19 @@ const deletedRoomSub = gql`subscription roomDeleted {
   }
 }`
 
-// const joinedUser = gql`subscription memberJoined {
-//   memberJoined {
-//     id
-//     username
-//   }
-// }`
-//
-// const leftUser = gql`subscription memberLeft {
-//   memberLeft {
-//     id
-//     username
-//   }
-// }`
+const joinedUser = gql`subscription memberJoined {
+  memberJoined {
+    id
+    username
+  }
+}`
+
+const leftUser = gql`subscription memberLeft {
+  memberLeft {
+    id
+    username
+  }
+}`
 
 export default {
   data() {
@@ -280,24 +279,24 @@ export default {
           this.rooms.splice(specificIndex, 1);
         },
       },
-      // joinedUser: {
-      //   query: joinedUser,
-      //   result({data}) {
-      //     console.log(data)
-      //     this.members.push(data.memberJoined)
-      //   },
-      // },
-      // leftUser: {
-      //   query: leftUser,
-      //   result({data}) {
-      //     console.log(data)
-      //     let specificIndex = -1;
-      //     this.members.forEach((member, memberIndex) =>
-      //         member.id === data.memberDeleted.id ? (specificIndex = memberIndex) : ""
-      //     );
-      //     this.members.splice(specificIndex, 1);
-      //   },
-      // },
+      joinedUser: {
+        query: joinedUser,
+        result({data}) {
+          console.log(data)
+          this.members.push(data.memberJoined)
+        },
+      },
+      leftUser: {
+        query: leftUser,
+        result({data}) {
+          console.log(data)
+          let specificIndex = -1;
+          this.members.forEach((member, memberIndex) =>
+              member.id === data.memberLeft.id ? (specificIndex = memberIndex) : ""
+          );
+          this.members.splice(specificIndex, 1);
+        },
+      },
     },
   },
   methods: {
@@ -311,6 +310,7 @@ export default {
           id: this.id
         },
       })
+      console.log(room)
       console.log(room.data.joinRoom)
       return room.data.joinRoom
     },
@@ -408,22 +408,11 @@ export default {
       this.id = e.target.id
       console.log(userCred.data.me.username)
       this.room = await this.joinRoom()
+      console.log("here")
       this.members = this.room.members
       this.messages = this.room.lastMessages
       this.isChatOwner = userCred.data.me.username === this.room.owner.username
-    },
-
-    // async createdMessageSubscription() {
-    //   this.$apollo.queries.tags.subscribeToMore({
-    //     // GraphQL document
-    //     document: createdMessageSub,
-    //     // Mutate the previous result
-    //     updateQuery: (previousResult, { subscriptionData }) => {
-    //       // Here, return the new result from the previous with the new data
-    //     },
-    //   })
-    // }
-
+    }
   }
 };
 </script>
@@ -524,18 +513,6 @@ export default {
   align-items: center;
 }
 
-.div-all-chats div span div{
-  /*position: absolute;*/
-  border-radius: 50%;
-  background-color: #42b983;
-  text-align: center;
-  width: 60px;
-  height: 60px;
-}
-
-.div-all-chats div span span{
-  width: 70%;
-}
 
 .div-all-chats div {
   height: 70px;
