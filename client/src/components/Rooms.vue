@@ -8,7 +8,10 @@
       <div class="div-main-wrapper">
         <div class="div-all-chats">
           <div v-for="room in rooms" :key="room.id">
-            <span :id="room.id" v-on:click="showMessages">{{ room.name }}</span>
+            <span :id="room.id" v-on:click="showMessages">
+              <div class="div-image">{{room.name[0]}}</div>
+              <span>{{ room.name }}</span>
+            </span>
           </div>
         </div>
         <div class="div-no-messages" v-if="mesIsHidden">
@@ -29,7 +32,7 @@
             <button class="button-update-chat" v-on:click="updateChat" v-if="isChatOwner">Update chat</button>
           </div>
           <div class="div-members-list">
-            <div v-for="member in this.room.members" :key="member.id">
+            <div v-for="member in this.members" :key="member.id">
               {{ member.username }}
             </div>
           </div>
@@ -201,19 +204,19 @@ const deletedRoomSub = gql`subscription roomDeleted {
   }
 }`
 
-const joinedUser = gql`subscription memberJoined {
-  memberJoined {
-    id
-    username
-  }
-}`
-
-const leftUser = gql`subscription memberLeft {
-  memberLeft {
-    id
-    username
-  }
-}`
+// const joinedUser = gql`subscription memberJoined {
+//   memberJoined {
+//     id
+//     username
+//   }
+// }`
+//
+// const leftUser = gql`subscription memberLeft {
+//   memberLeft {
+//     id
+//     username
+//   }
+// }`
 
 export default {
   data() {
@@ -223,6 +226,7 @@ export default {
       members: [],
       mesIsHidden: true,
       room: {},
+      me: {},
       id: '',
       newMessage: '',
       modalIsHidden: true,
@@ -276,18 +280,24 @@ export default {
           this.rooms.splice(specificIndex, 1);
         },
       },
-      joinedUser: {
-        query: joinedUser,
-        result({data}) {
-          console.log(data)
-        },
-      },
-      leftUser: {
-        query: leftUser,
-        result({data}) {
-          console.log(data)
-        },
-      },
+      // joinedUser: {
+      //   query: joinedUser,
+      //   result({data}) {
+      //     console.log(data)
+      //     this.members.push(data.memberJoined)
+      //   },
+      // },
+      // leftUser: {
+      //   query: leftUser,
+      //   result({data}) {
+      //     console.log(data)
+      //     let specificIndex = -1;
+      //     this.members.forEach((member, memberIndex) =>
+      //         member.id === data.memberDeleted.id ? (specificIndex = memberIndex) : ""
+      //     );
+      //     this.members.splice(specificIndex, 1);
+      //   },
+      // },
     },
   },
   methods: {
@@ -388,6 +398,7 @@ export default {
       const userCred = await this.$apollo.query({
         query: userInfo
       })
+      this.me = userCred.data.me
       console.log(userCred.data.me.username)
       if (userCred.data.me.currentRoom) {
         await this.leaveRoom()
@@ -471,6 +482,20 @@ export default {
   overflow-y: auto;
 }
 
+.div-all-chats::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+}
+
+.div-all-chats::-webkit-scrollbar {
+  width: 12px;
+}
+
+.div-all-chats::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
 .div-chat-info, .div-no-messages {
   background: rgba(255, 255, 255, 0.5);
   border-radius: 20px;
@@ -494,6 +519,22 @@ export default {
   text-align: center;
   line-height: 70px;
   cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.div-all-chats div span div{
+  /*position: absolute;*/
+  border-radius: 50%;
+  background-color: #42b983;
+  text-align: center;
+  width: 60px;
+  height: 60px;
+}
+
+.div-all-chats div span span{
+  width: 70%;
 }
 
 .div-all-chats div {
@@ -504,10 +545,13 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 70%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .div-all-chats div:nth-child(1) {
-  margin-top: 0px;
+  margin-top: 0;
 }
 
 .div-modal-new {
