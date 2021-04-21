@@ -1,12 +1,12 @@
 <template>
     <div id="app">
       <particles-bg type="cobweb" color="404040" :bg="true" />
-        <div id="nav">
+<!--        <div id="nav">-->
 
-            <router-link to="/">Home</router-link> |
-            <router-link to="/login">Login</router-link> |
-            <router-link to="/about">About</router-link>
-        </div>
+<!--            <router-link to="/">Home</router-link> |-->
+<!--            <router-link to="/login">Login</router-link> |-->
+<!--            <router-link to="/about">About</router-link>-->
+<!--        </div>-->
         <router-view/>
     </div>
 </template>

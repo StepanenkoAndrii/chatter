@@ -1,7 +1,7 @@
 <template>
   <div class="div-container">
     <div class="div-main">
-      <p class="p-header">Welcome to Chatter/p>
+      <p class="p-header">Welcome to Chatter</p>
       <div class="div-button-new-container">
         <button class="button-new-chat" v-on:click="openModalWindow">Create chat</button>
       </div>
@@ -12,7 +12,7 @@
           </div>
         </div>
         <div class="div-no-messages" v-if="mesIsHidden">
-          <p>Choose chat to see messages</p>
+          <p>Select a chat to start messaging</p>
         </div>
         <div class="div-chat-info" v-if="!mesIsHidden">
           <div v-for="message in this.room.lastMessages" :key="message.id">
@@ -27,6 +27,11 @@
           </div>
           <div class="div-button-update-container">
             <button class="button-update-chat" v-on:click="updateChat" v-if="isChatOwner">Update chat</button>
+          </div>
+          <div class="div-members-list">
+            <div v-for="member in this.room.members" :key="member.id">
+              {{ member.username }}
+            </div>
           </div>
         </div>
       </div>
@@ -67,10 +72,14 @@ const allRooms = gql`query rooms {
     lastMessages {
       text
     }
+    members {
+      id
+      username
+    }
   }
 }`
 
-const getRoomById = gql`mutation join($id:ID!) {
+const joinRoom = gql`mutation join($id:ID!) {
   joinRoom(roomId: $id) {
     id
     name
@@ -78,6 +87,10 @@ const getRoomById = gql`mutation join($id:ID!) {
       text
     }
     owner {
+      username
+    }
+    members {
+      id
       username
     }
   }
@@ -160,11 +173,54 @@ const createdRoomSub = gql`subscription roomCreated {
   }
 }`
 
+const updatedRoomSub = gql`subscription roomUpdated {
+  roomUpdated {
+    id
+    name
+    owner {
+      username
+    }
+    lastMessages {
+      text
+    }
+    members {
+      id
+      username
+    }
+  }
+}`
+
+const deletedRoomSub = gql`subscription roomDeleted {
+  roomDeleted {
+    id
+    name
+    owner {
+      id
+      username
+    }
+  }
+}`
+
+const joinedUser = gql`subscription memberJoined {
+  memberJoined {
+    id
+    username
+  }
+}`
+
+const leftUser = gql`subscription memberLeft {
+  memberLeft {
+    id
+    username
+  }
+}`
+
 export default {
   data() {
     return {
       rooms: [],
       messages: [],
+      members: [],
       mesIsHidden: true,
       room: {},
       id: '',
@@ -185,10 +241,6 @@ export default {
     this.rooms = rooms.data.rooms
   },
   apollo: {
-    // rooms: {
-    //   fetchPolicy: "no-cache",
-    //   query: allRooms,
-    // },
     $subscribe: {
       messageCreation: {
         query: createdMessageSub,
@@ -200,31 +252,55 @@ export default {
       roomCreation: {
         query: createdRoomSub,
         result({data}) {
-          console.log(data.roomCreated)
           this.rooms.push(data.roomCreated);
         },
       },
+      roomChange: {
+        query: updatedRoomSub,
+        result({data}) {
+          this.rooms = this.rooms.map(room => {
+            if (room.id === data.roomUpdated.id) {
+              room.name = data.roomUpdated.name
+            }
+            return room
+          })
+        },
+      },
+      roomDeletion: {
+        query: deletedRoomSub,
+        result({data}) {
+          let specificIndex = -1;
+          this.rooms.forEach((room, roomIndex) =>
+              room.id === data.roomDeleted.id ? (specificIndex = roomIndex) : ""
+          );
+          this.rooms.splice(specificIndex, 1);
+        },
+      },
+      joinedUser: {
+        query: joinedUser,
+        result({data}) {
+          console.log(data)
+        },
+      },
+      leftUser: {
+        query: leftUser,
+        result({data}) {
+          console.log(data)
+        },
+      },
     },
-    // subscribeToMore: {
-    //   document: createdRoomSub,
-    //   updateQuery: () => {
-    //     // Here, return the new result from the previous with the new data
-    //   },
-    // }
   },
   methods: {
 
     //get specific room
-    async getRoomById() {
+    async joinRoom() {
       const room = await this.$apollo.mutate({
-        mutation: getRoomById,
+        fetchPolicy: "no-cache",
+        mutation: joinRoom,
         variables: {
           id: this.id
         },
       })
-      console.log(this.id)
-      console.log("sdsada")
-      console.log(room)
       console.log(room.data.joinRoom)
       return room.data.joinRoom
     },
@@ -232,6 +308,7 @@ export default {
     //leave current room
     async leaveRoom() {
       return await this.$apollo.mutate({
+        fetchPolicy: "no-cache",
         mutation: leaveRoom,
       })
     },
@@ -239,6 +316,7 @@ export default {
     //create new message
     async createNewMessage() {
       const chatMessage = await this.$apollo.mutate({
+        fetchPolicy: "no-cache",
         mutation: createdMessage,
         variables: {
           text: this.newMessage,
@@ -269,7 +347,6 @@ export default {
         },
       })
       console.log(newRoom.data)
-      // this.rooms.push(newRoom.data)
       return newRoom.data
     },
 
@@ -281,6 +358,7 @@ export default {
     async updateExistingChat() {
       this.modalIsHidden2 = true
       const updatedRoom = await this.$apollo.mutate({
+        fetchPolicy: "no-cache",
         mutation: roomChange,
         variables: {
           id: this.id,
@@ -294,11 +372,14 @@ export default {
     //delete chat
     async deleteChat() {
       const deletedRoom = await this.$apollo.mutate({
+        fetchPolicy: "no-cache",
         mutation: roomDeletion,
         variables: {
           id: this.id,
         },
       })
+      // await this.leaveRoom()
+      this.mesIsHidden = true
       console.log(deletedRoom.data)
     },
 
@@ -315,7 +396,8 @@ export default {
       console.log(e.target.id)
       this.id = e.target.id
       console.log(userCred.data.me.username)
-      this.room = await this.getRoomById()
+      this.room = await this.joinRoom()
+      this.members = this.room.members
       this.messages = this.room.lastMessages
       this.isChatOwner = userCred.data.me.username === this.room.owner.username
     },
