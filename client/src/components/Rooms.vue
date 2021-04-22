@@ -3,12 +3,18 @@
     <div class="div-main">
       <p class="p-header">Welcome to Chatter</p>
       <div class="div-button-new-container">
-        <button class="button-new-chat" v-on:click="openModalWindow">Create chat</button>
+        <button class="button-new-chat" v-on:click="openModalWindow">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          Create chat
+        </button>
       </div>
       <div class="div-main-wrapper">
         <div class="div-all-chats">
-          <div v-for="room in rooms" :key="room.id">
-            <span :id="room.id" v-on:click="showMessages">
+          <div v-for="room in rooms" :key="room.id" v-tilt="{speed: 200, max: 25}">
+            <span :id="room.id" v-on:click="showMessages" :data-text="room.name">
               {{ room.name }}
             </span>
           </div>
@@ -17,23 +23,42 @@
           <p>Select a chat to start messaging</p>
         </div>
         <div class="div-chat-info" v-if="!mesIsHidden">
-          <div v-for="message in this.room.lastMessages" :key="message.id">
-            {{ message.text }}
+          <div class="div-messages-header">
+            <div class="div-button-delete-container">
+              <button class="button-delete-chat" v-on:click="deleteChat" v-if="isChatOwner">Delete chat</button>
+            </div>
+            <div class="div-members-list">
+              <div class="div-hover" @mouseover="showMembersList" @mouseleave="hideMembersList">
+                Chat members
+              </div>
+              <div class="div-list" v-if="hovered">
+                <div v-for="member in this.members" :key="member.id">
+                  {{ member.username }}
+                </div>
+              </div>
+            </div>
+            <div class="div-button-update-container">
+              <button class="button-update-chat" v-on:click="updateChat" v-if="isChatOwner">Update chat</button>
+            </div>
+          </div>
+          <div class="div-messages-container">
+            <div v-for="message in this.room.lastMessages" :key="message.id" class="div-line-message">
+              <div class="div-message" :class="{ 'div-owner-message' : message.author.id === me.id }">
+                <div class="div-message-author">
+                  {{ message.author.username }}
+                </div>
+                <div class="div-message-text">
+                  {{ message.text }}
+                </div>
+                <div class="div-time">
+                  {{ message.timestamp.slice(11).split("").reverse().join("").slice(5).split("").reverse().join("") }}
+                </div>
+              </div>
+            </div>
           </div>
           <div class="div-enter-message">
             <input v-model="newMessage" placeholder="Enter your message"/>
-            <button v-on:click="createNewMessage">PUSH</button>
-          </div>
-          <div class="div-button-delete-container">
-            <button class="button-delete-chat" v-on:click="deleteChat" v-if="isChatOwner">Delete chat</button>
-          </div>
-          <div class="div-button-update-container">
-            <button class="button-update-chat" v-on:click="updateChat" v-if="isChatOwner">Update chat</button>
-          </div>
-          <div class="div-members-list">
-            <div v-for="member in this.members" :key="member.id">
-              {{ member.username }}
-            </div>
+            <button v-on:click="createNewMessage">Send</button>
           </div>
         </div>
       </div>
@@ -68,11 +93,18 @@ const allRooms = gql`query rooms {
   rooms {
     id
     name
+    timestamp
     owner {
+      id
       username
     }
     lastMessages {
       text
+      timestamp
+      author {
+        id
+        username
+      }
     }
     members {
       id
@@ -85,10 +117,17 @@ const joinRoom = gql`mutation join($id:ID!) {
   joinRoom(roomId: $id) {
     id
     name
+    timestamp
     lastMessages {
       text
+      timestamp
+      author {
+        id
+        username
+      }
     }
     owner {
+      id
       username
     }
     members {
@@ -110,6 +149,7 @@ const createdMessage = gql`mutation join($text:String!) {
     id
     timestamp
     author {
+      id
       username
     }
     text
@@ -121,6 +161,10 @@ const newRoomCreation = gql`mutation createRoom($roomName:String!) {
     id
     name
     timestamp
+    owner {
+      id
+      username
+    }
   }
 }`
 
@@ -129,6 +173,10 @@ const roomDeletion = gql`mutation deleteRoom($id:ID!) {
     id
     name
     timestamp
+    owner {
+      id
+      username
+    }
   }
 }`
 
@@ -137,6 +185,10 @@ const roomChange = gql`mutation updateRoom($name:String!,$id:ID!) {
     id
     name
     timestamp
+    owner {
+      id
+      username
+    }
   }
 }`
 
@@ -168,6 +220,7 @@ const createdRoomSub = gql`subscription roomCreated {
   roomCreated {
     id
     name
+    timestamp
     owner {
       id
       username
@@ -179,7 +232,9 @@ const updatedRoomSub = gql`subscription roomUpdated {
   roomUpdated {
     id
     name
+    timestamp
     owner {
+      id
       username
     }
     lastMessages {
@@ -196,6 +251,7 @@ const deletedRoomSub = gql`subscription roomDeleted {
   roomDeleted {
     id
     name
+    timestamp
     owner {
       id
       username
@@ -234,6 +290,7 @@ export default {
       roomName: '',
       roomName2: '',
       isChatOwner: false,
+      hovered: false,
     };
   },
   name: "Rooms",
@@ -300,6 +357,16 @@ export default {
     },
   },
   methods: {
+
+    //show users
+    async showMembersList() {
+      this.hovered = true
+    },
+
+    //show users
+    async hideMembersList() {
+      this.hovered = false
+    },
 
     //get specific room
     async joinRoom() {
@@ -419,19 +486,13 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+
 .div-container {
   z-index: 1;
 }
 
-.div-main {
-  /*height: 60vh;*/
-  /*margin-top: 10vh;*/
-  /*position: absolute;*/
-  /*z-index: 1;*/
-}
-
 .div-button-new-container {
-  width: 30%;
+  width: 25%;
   height: auto;
   display: flex;
   justify-content: center;
@@ -446,6 +507,11 @@ export default {
   padding: 15px 30px;
   color: white;
   cursor: pointer;
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  transition: .2s;
+  font-family: 'Prompt', sans-serif;
 }
 
 .button-delete-chat {
@@ -456,6 +522,20 @@ export default {
   background-color: rgba(196, 115, 33, 0.2);
 }
 
+.button-new-chat:hover {
+  background: #34eb92;
+  color: black;
+  transition-duration: 1s;
+  box-shadow: 0 0 10px #34eb92,
+  0 0 40px #34eb92,
+  0 0 80px #34eb92;
+}
+
+.button-new-chat span {
+  position: absolute;
+  display: block;
+}
+
 .div-main-wrapper {
   display: flex;
   height: 60vh;
@@ -464,10 +544,9 @@ export default {
 }
 
 .div-all-chats {
-  /*background: rgba(255, 255, 255, 0.2);*/
   border-radius: 20px;
   color: white;
-  width: 30%;
+  width: 25%;
   overflow-y: auto;
 }
 
@@ -482,14 +561,62 @@ export default {
 
 .div-all-chats::-webkit-scrollbar-thumb {
   border-radius: 10px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
+.div-messages-container::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+}
+
+.div-messages-container::-webkit-scrollbar {
+  width: 12px;
+}
+
+.div-messages-container::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.div-message-text::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.div-message-text::-webkit-scrollbar {
+  width: 6px;
+}
+
+.div-message-text::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/*.div-message-author::-webkit-scrollbar-track {*/
+/*  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);*/
+/*  border-radius: 2px;*/
+/*}*/
+
+/*.div-message-author::-webkit-scrollbar {*/
+/*  width: 3px;*/
+/*}*/
+
+/*.div-message-author::-webkit-scrollbar-thumb {*/
+/*  border-radius: 2px;*/
+/*  background-color: rgba(255, 255, 255, 0.1);*/
+/*}*/
+
 .div-chat-info, .div-no-messages {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 20px;
+  box-shadow: 20px 20px 50px rgba(0, 0, 0, 0.5);
+  border-top: 2px solid rgba(255, 255, 255, 0.1);
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
   color: white;
-  width: 69%;
+  width: 64%;
+  margin-left: 3vw;
+  position: relative;
 }
 
 .div-no-messages {
@@ -511,13 +638,35 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+  letter-spacing: 2px;
+  font-size: 24px;
+  text-shadow: 0 0 20px #34eb92;
 }
 
+.div-all-chats div span:after {
+  content: attr(data-text);
+  position: absolute;
+  /*top: 0;*/
+  /*left: 0;*/
+  z-index: -1;
+  color: #34eb92;
+  filter: blur(15px);
+}
+
+.div-all-chats div span:before {
+  content: '';
+  position: absolute;
+  /*top: 0;*/
+  /*left: 0;*/
+  z-index: -2;
+  background: #097841;
+  opacity: 0.5;
+  filter: blur(100px);
+}
 
 .div-all-chats div {
   height: 70px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 60px;
+  border-radius: 40px;
   margin-top: 10px;
   display: flex;
   justify-content: center;
@@ -525,6 +674,11 @@ export default {
   width: 70%;
   margin-left: auto;
   margin-right: auto;
+  box-shadow: 20px 20px 50px rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+  border-top: 2px solid rgba(255, 255, 255, 0.1);
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .div-all-chats div:nth-child(1) {
@@ -582,4 +736,150 @@ export default {
   justify-content: center;
   align-items: center;
 }
+
+.div-enter-message {
+  position: absolute;
+  bottom: 5px;
+  left: 0;
+  right: 0;
+}
+
+.div-enter-message input {
+  width: 50%;
+  height: 40px;
+  border-radius: 25px;
+  box-shadow: 0 0 5px #34eb92,
+  0 0 10px #34eb92,
+  0 0 15px #34eb92;
+  background: rgba(0, 0, 0, 0.5);
+  border-top: 2px solid rgba(255, 255, 255, 0.2);
+  border-left: 2px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 0;
+  border-right: 0;
+  margin-bottom: 10px;
+  outline: none;
+  font-family: 'Prompt', sans-serif;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  padding-left: 20px;
+}
+
+.div-enter-message button {
+  margin-left: 3%;
+  width: 8%;
+  height: 40px;
+  background: #34eb92;
+  color: black;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'Prompt', sans-serif;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5),
+  0 0 10px rgba(0, 0, 0, 0.5),
+  0 0 15px rgba(0, 0, 0, 0.5);
+  border: none;
+}
+
+.div-enter-message button:hover {
+  cursor: pointer;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5),
+  0 0 15px rgba(0, 0, 0, 0.5),
+  0 0 25px rgba(0, 0, 0, 0.5),
+  0 0 35px rgba(0, 0, 0, 0.5),
+  0 0 45px rgba(0, 0, 0, 0.5);
+  /*text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);*/
+}
+
+.div-enter-message input::placeholder {
+  /*padding-left: 10px;*/
+  color: rgba(255, 255, 255, 0.47);
+  font-family: 'Prompt', sans-serif;
+}
+
+.div-message {
+  /*display: flex;*/
+  /*justify-content: center;*/
+  /*align-items: center;*/
+  width: 42%;
+  border-radius: 20px;
+  height: 60px;
+  background: rgba(44, 62, 80, 0.5);
+  background: linear-gradient(0.25turn, rgba(99, 167, 237, 0.3), rgba(44, 62, 80, 0.3), rgba(44, 62, 80, 0.8));
+  /*margin-top: 15px;*/
+  box-shadow: 20px 20px 50px rgba(0, 0, 0, 0.5);
+  border-top: 2px solid rgba(255, 255, 255, 0.1);
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
+  margin-left: 2%;
+  line-height: 60px;
+}
+
+.div-owner-message {
+  background: linear-gradient(0.25turn, rgba(34, 230, 135, 0.35), rgba(35, 163, 96, 0.5), rgba(35, 163, 96, 0.8));
+  float: right;
+  margin-right: 2%;
+  margin-left: 0;
+}
+
+.div-messages-container {
+  width: 100%;
+  height: 70%;
+  overflow-y: auto;
+}
+
+.div-line-message {
+  width: 100%;
+  height: 80px;
+}
+
+.div-message-author {
+  margin-left: 3%;
+  font-size: 24px;
+  font-family: 'Lobster', sans-serif;
+  width: 15%;
+  float: left;
+  overflow: hidden;
+}
+
+.div-message-text {
+  margin-left: 7%;
+  width: 50%;
+  text-align: left;
+  /*overflow: hidden;*/
+  float: left;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 60px;
+  word-wrap: break-word;
+}
+
+.div-time {
+  font-size: 24px;
+  font-family: 'Lobster', sans-serif;
+  float: right;
+  margin-right: 3%;
+}
+
+.div-messages-header {
+  width: 100%;
+  height: 15%;
+}
+
+.div-button-delete-container {
+  float: left;
+}
+
+.div-button-update-container {
+  float: right;
+}
+
+.div-members-list {
+  position: absolute;
+  text-align: center;
+  width: 100%;
+}
+
+.div-members-list:hover {
+  cursor: pointer;
+}
+
 </style>
