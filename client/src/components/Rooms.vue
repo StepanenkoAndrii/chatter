@@ -13,10 +13,12 @@
       </div>
       <div class="div-main-wrapper">
         <div class="div-all-chats">
-          <div v-for="room in rooms" :key="room.id" v-tilt="{speed: 200, max: 25}">
-            <span :id="room.id" v-on:click="showMessages" :data-text="room.name">
+          <div class="div-chat" v-for="room in rooms" :key="room.id" v-tilt="{speed: 200, max: 25}">
+            <!--            <button :id="room.id" v-on:click="showMessages" :data-text="room.name" :class="{active: room.active}">-->
+            <button :id="room.id" v-on:click="showMessages" :data-text="room.name"
+                    :class="{ 'button-owner-chat' : room.owner.id === me.id }">
               {{ room.name }}
-            </span>
+            </button>
           </div>
         </div>
         <div class="div-no-messages" v-if="mesIsHidden">
@@ -34,6 +36,7 @@
               <div class="div-list" v-if="hovered">
                 <div v-for="member in this.members" :key="member.id">
                   {{ member.username }}
+                  <span class="span-me" v-if="member.id === me.id">(me)</span>
                 </div>
               </div>
             </div>
@@ -291,6 +294,7 @@ export default {
       roomName2: '',
       isChatOwner: false,
       hovered: false,
+      // active: false
     };
   },
   name: "Rooms",
@@ -298,6 +302,10 @@ export default {
     const rooms = await this.$apollo.query({
       query: allRooms
     })
+    const userCred = await this.$apollo.query({
+      query: userInfo
+    })
+    this.me = userCred.data.me
     this.rooms = rooms.data.rooms
   },
   apollo: {
@@ -358,6 +366,19 @@ export default {
   },
   methods: {
 
+    // //choose room
+    // async chooseRoom() {
+    //   let specificIndex = -1;
+    //   console.log(this.id)
+    //   this.rooms.forEach((room, roomIndex) =>
+    //       room.id === this.id ? (specificIndex = roomIndex) : ""
+    //   );
+    //   let chosenRoom = this.rooms[specificIndex]
+    //   console.log(chosenRoom)
+    //   chosenRoom.active = !chosenRoom.active
+    //   this.$set(this.rooms, specificIndex, chosenRoom)
+    // },
+
     //show users
     async showMembersList() {
       this.hovered = true
@@ -377,7 +398,6 @@ export default {
           id: this.id
         },
       })
-      console.log(room)
       console.log(room.data.joinRoom)
       return room.data.joinRoom
     },
@@ -399,6 +419,7 @@ export default {
           text: this.newMessage,
         },
       })
+      this.newMessage = ""
       console.log(chatMessage.data)
       return chatMessage.data
     },
@@ -479,6 +500,15 @@ export default {
       this.members = this.room.members
       this.messages = this.room.lastMessages
       this.isChatOwner = userCred.data.me.username === this.room.owner.username
+      let specificIndex = -1;
+      console.log(this.id)
+      this.rooms.forEach((room, roomIndex) =>
+          room.id === this.id ? (specificIndex = roomIndex) : ""
+      );
+      let chosenRoom = this.rooms[specificIndex]
+      console.log(chosenRoom)
+      chosenRoom.active = !chosenRoom.active
+      this.$set(this.rooms, specificIndex, chosenRoom)
     }
   }
 };
@@ -516,10 +546,21 @@ export default {
 
 .button-delete-chat {
   background-color: rgba(196, 33, 33, 0.2);
+  margin-left: 15px;
+  z-index: 100;
 }
 
 .button-update-chat {
   background-color: rgba(196, 115, 33, 0.2);
+  margin-right: 15px;
+}
+
+.button-delete-chat, .button-update-chat {
+  width: 160px;
+  height: 50px;
+  padding: 5px 10px;
+  font-size: 16px;
+  margin-top: 7px;
 }
 
 .button-new-chat:hover {
@@ -529,6 +570,24 @@ export default {
   box-shadow: 0 0 10px #34eb92,
   0 0 40px #34eb92,
   0 0 80px #34eb92;
+}
+
+.button-update-chat:hover {
+  background: rgb(204, 136, 61);
+  color: black;
+  transition-duration: 1s;
+  box-shadow: 0 0 5px rgb(204, 136, 61),
+  0 0 15px rgb(204, 136, 61),
+  0 0 30px rgb(204, 136, 61);
+}
+
+.button-delete-chat:hover {
+  background: rgb(222, 67, 67);
+  color: black;
+  transition-duration: 1s;
+  box-shadow: 0 0 5px rgb(222, 67, 67),
+  0 0 15px rgb(222, 67, 67),
+  0 0 30px rgb(222, 67, 67);
 }
 
 .button-new-chat span {
@@ -548,7 +607,21 @@ export default {
   color: white;
   width: 25%;
   overflow-y: auto;
+  position: relative;
 }
+
+/*.div-plug {*/
+/*  width: 100%;*/
+/*  height: 100%;*/
+/*  position: absolute;*/
+/*  top: 0;*/
+/*  left: 0;*/
+/*  z-index: 20;*/
+/*  margin: auto;*/
+/*  background: transparent;*/
+/*  border: 1px solid white;*/
+/*  cursor: initial;*/
+/*}*/
 
 .div-all-chats::-webkit-scrollbar-track {
   -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
@@ -629,7 +702,7 @@ export default {
   display: block;
 }
 
-.div-all-chats div span {
+.div-all-chats div button {
   width: 100%;
   height: 70px;
   text-align: center;
@@ -641,30 +714,31 @@ export default {
   letter-spacing: 2px;
   font-size: 24px;
   text-shadow: 0 0 20px #34eb92;
+  outline: none;
+  background: rgba(0, 0, 0, 0.2);
+  border: none;
+  color: white;
+  font-family: "Prompt", sans-serif;
 }
 
-.div-all-chats div span:after {
+.div-all-chats div button:after {
   content: attr(data-text);
   position: absolute;
-  /*top: 0;*/
-  /*left: 0;*/
   z-index: -1;
   color: #34eb92;
   filter: blur(15px);
 }
 
-.div-all-chats div span:before {
+.div-all-chats div button:before {
   content: '';
   position: absolute;
-  /*top: 0;*/
-  /*left: 0;*/
   z-index: -2;
   background: #097841;
   opacity: 0.5;
   filter: blur(100px);
 }
 
-.div-all-chats div {
+.div-chat {
   height: 70px;
   border-radius: 40px;
   margin-top: 10px;
@@ -681,7 +755,7 @@ export default {
   backdrop-filter: blur(10px);
 }
 
-.div-all-chats div:nth-child(1) {
+.div-chat:nth-child(1) {
   margin-top: 0;
 }
 
@@ -861,25 +935,76 @@ export default {
 
 .div-messages-header {
   width: 100%;
-  height: 15%;
+  height: 12%;
+  position: relative;
 }
 
 .div-button-delete-container {
   float: left;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .div-button-update-container {
   float: right;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .div-members-list {
   position: absolute;
   text-align: center;
   width: 100%;
+  height: 100%;
+  margin: auto;
 }
 
 .div-members-list:hover {
   cursor: pointer;
+}
+
+.div-hover {
+  /*border: 1px solid white;*/
+  width: 20%;
+  margin: 1.5% auto;
+  font-size: 24px;
+}
+
+.div-list {
+  background: rgba(0, 0, 0, 0.2);
+  margin: auto;
+  width: 25%;
+  border-radius: 25px;
+  font-size: 20px;
+  font-family: 'Lobster', sans-serif;
+  /*display: flex;*/
+  /*justify-content: center;*/
+  /*align-items: center;*/
+}
+
+.div-list div {
+  margin-top: 10px;
+}
+
+.div-list div:first-of-type {
+  padding-top: 8px;
+}
+
+.div-list div:last-of-type {
+  padding-bottom: 8px;
+}
+
+.active {
+  background-color: red;
+}
+
+.button-owner-chat {
+  border-radius: 40px;
+  box-shadow: 0 0 1px #009a08,
+  0 0 3px #009a08,
+  0 0 10px #009a08;
 }
 
 </style>
