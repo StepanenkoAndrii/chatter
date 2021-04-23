@@ -511,7 +511,12 @@ export default {
       console.log(this.me.currentRoom)
       if (this.me.currentRoom) {
         console.log("here")
-        await this.leaveRoom()
+        try {
+          await this.leaveRoom()
+        }
+        catch (e) {
+          console.log(e)
+        }
       }
       this.mesIsHidden = false
       console.log(e.target.id)
@@ -736,6 +741,7 @@ export default {
   z-index: -1;
   color: #34eb92;
   filter: blur(15px);
+  overflow: hidden;
 }
 
 .div-all-chats div button:before {
@@ -745,6 +751,7 @@ export default {
   background: #097841;
   opacity: 0.5;
   filter: blur(100px);
+  overflow: hidden;
 }
 
 .div-chat {
