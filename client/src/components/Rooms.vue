@@ -1,6 +1,7 @@
 <template>
   <div class="div-container">
     <div class="div-main">
+      <button class="button-logout" v-on:click="logout">Logout</button>
       <p class="p-header">Welcome to Chatter</p>
       <div class="div-button-new-container">
         <button class="button-new-chat" v-on:click="openModalWindow">
@@ -91,6 +92,7 @@
 
 <script>
 import gql from "graphql-tag";
+import {onLogout} from "./../vue-apollo";
 
 const allRooms = gql`query rooms {
   rooms {
@@ -379,6 +381,13 @@ export default {
     //   this.$set(this.rooms, specificIndex, chosenRoom)
     // },
 
+    //logout
+    async logout() {
+      await onLogout(this.$apollo.provider.defaultClient);
+      await this.$apollo.provider.defaultClient.resetStore();
+      await this.$router.push('/login')
+    },
+
     //show users
     async showMembersList() {
       this.hovered = true
@@ -398,6 +407,7 @@ export default {
           id: this.id
         },
       })
+      console.log("here_in")
       console.log(room.data.joinRoom)
       return room.data.joinRoom
     },
@@ -478,6 +488,7 @@ export default {
       })
       // await this.leaveRoom()
       this.mesIsHidden = true
+      // this.me.currentRoom = null
       console.log(deletedRoom.data)
     },
 
@@ -488,27 +499,32 @@ export default {
       })
       this.me = userCred.data.me
       console.log(userCred.data.me.username)
+      console.log(userCred.data.me.currentRoom)
+      console.log("1")
       if (userCred.data.me.currentRoom) {
+        console.log("1.5")
         await this.leaveRoom()
       }
+      console.log("2")
       this.mesIsHidden = false
       console.log(e.target.id)
       this.id = e.target.id
       console.log(userCred.data.me.username)
+      console.log("3")
       this.room = await this.joinRoom()
       console.log("here")
       this.members = this.room.members
       this.messages = this.room.lastMessages
       this.isChatOwner = userCred.data.me.username === this.room.owner.username
-      let specificIndex = -1;
-      console.log(this.id)
-      this.rooms.forEach((room, roomIndex) =>
-          room.id === this.id ? (specificIndex = roomIndex) : ""
-      );
-      let chosenRoom = this.rooms[specificIndex]
-      console.log(chosenRoom)
-      chosenRoom.active = !chosenRoom.active
-      this.$set(this.rooms, specificIndex, chosenRoom)
+      // let specificIndex = -1;
+      // console.log(this.id)
+      // this.rooms.forEach((room, roomIndex) =>
+      //     room.id === this.id ? (specificIndex = roomIndex) : ""
+      // );
+      // let chosenRoom = this.rooms[specificIndex]
+      // console.log(chosenRoom)
+      // chosenRoom.active = !chosenRoom.active
+      // this.$set(this.rooms, specificIndex, chosenRoom)
     }
   }
 };
@@ -774,9 +790,9 @@ export default {
 
 .div-centered-window {
   background-color: rgba(255, 255, 255, 0.5);
-  border-radius: 50px;
-  width: 50%;
-  height: 30vh;
+  border-radius: 25px;
+  width: 40%;
+  height: 22vh;
   /*display: flex;*/
   /*justify-content: center;*/
   /*align-items: center;*/
@@ -785,17 +801,23 @@ export default {
 
 .div-centered-window p {
   font-size: 36px;
+  font-weight: 900;
   color: black;
   text-align: center;
 }
 
 .button-cross {
   position: absolute;
-  top: 10px;
-  right: 20px;
-  font-size: 24px;
+  top: 7px;
+  right: 16px;
+  font-size: 28px;
+  font-weight: 900;
   background-color: transparent;
   border: none;
+}
+
+.button-cross:hover {
+  cursor: pointer;
 }
 
 .p-header {
@@ -818,7 +840,7 @@ export default {
   right: 0;
 }
 
-.div-enter-message input {
+.div-enter-message input, .div-centered-window div input {
   width: 50%;
   height: 40px;
   border-radius: 25px;
@@ -838,7 +860,7 @@ export default {
   padding-left: 20px;
 }
 
-.div-enter-message button {
+.div-enter-message button, .div-centered-window div button {
   margin-left: 3%;
   width: 8%;
   height: 40px;
@@ -852,6 +874,10 @@ export default {
   0 0 10px rgba(0, 0, 0, 0.5),
   0 0 15px rgba(0, 0, 0, 0.5);
   border: none;
+}
+
+.div-centered-window div button {
+  width: 15%;
 }
 
 .div-enter-message button:hover {
@@ -1005,6 +1031,31 @@ export default {
   box-shadow: 0 0 1px #009a08,
   0 0 3px #009a08,
   0 0 10px #009a08;
+}
+
+.div-chat:first-of-type {
+  margin-top: 10px;
+}
+
+.div-chat:last-of-type {
+  margin-bottom: 10px;
+}
+
+.button-logout {
+  position: fixed;
+  top: 16vh;
+  right: 9vw;
+  color: #34eb92;
+  font-size: 20px;
+  outline: none;
+  border: none;
+  background: transparent;
+  width: 80px;
+  height: 40px;
+}
+
+.button-logout:hover {
+  cursor: pointer;
 }
 
 </style>

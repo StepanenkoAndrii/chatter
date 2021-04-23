@@ -1,5 +1,6 @@
 <template>
   <div class="div-main">
+    <h1>Please, sign in / sign up to enter Chatter</h1>
     <div class="div-login" v-if="regIsHidden">
       <input type="text" v-model="username" placeholder="Username" required/>
       <br/>
@@ -7,8 +8,10 @@
       <br/>
       <button v-on:click="getLoginData">Submit</button>
       <br/>
-      <a v-on:click="regIsHidden = false">Sign up</a>
-      <br/>
+      <p v-if="errorMes.length > 0">{{ errorMes }}</p>
+    </div>
+    <div class="div-a" v-if="regIsHidden">
+      <p>Or<a v-on:click="regIsHidden = false; errorMes = ''; username = ''; password = ''">&nbsp;sign up&nbsp;</a>if you're new</p>
     </div>
     <div class="div-register" v-if="!regIsHidden">
       <input type="text" v-model="username" placeholder="Username" required/>
@@ -19,15 +22,17 @@
       <br/>
       <button v-on:click="getRegisterData">Submit</button>
       <br/>
-      <a v-on:click="regIsHidden = true">Log in</a>
-      <br/>
+      <p v-if="errorMes.length > 0">{{ errorMes }}</p>
+    </div>
+    <div class="div-a" v-if="!regIsHidden">
+      <p>Or<a v-on:click="regIsHidden = true; errorMes = ''; username = ''; password = ''; passwordConfirmed = ''">&nbsp;sign in&nbsp;</a>if you're already registered</p>
     </div>
   </div>
 </template>
 
 <script>
 import gql from "graphql-tag"
-import { onLogin } from "./../vue-apollo";
+import {onLogin} from "./../vue-apollo";
 
 const userToken = gql`query login($username:String!,$password:String!) {
   token: login(username: $username, password: $password)
@@ -51,7 +56,8 @@ export default {
       username: '',
       password: '',
       passwordConfirmed: '',
-      regIsHidden: true
+      regIsHidden: true,
+      errorMes: ''
     }
   },
   name: "UserLogin",
@@ -59,7 +65,7 @@ export default {
 
     // check user existence
     async checkUser() {
-       const userObject = await this.$apollo.query({
+      const userObject = await this.$apollo.query({
         query: checkUserExistence,
         variables: {
           username: this.username
@@ -83,6 +89,7 @@ export default {
     // signing in
     async getLoginData() {
       if (this.username.length === 0 || this.password.length === 0) {
+        this.errorMes = "Incorrect data input"
         console.log("Incorrect data input.")
         return
       }
@@ -104,6 +111,7 @@ export default {
     // registration
     async getRegisterData() {
       if (this.username.length === 0 || this.password.length === 0 || this.password.length !== this.passwordConfirmed.length) {
+        this.errorMes = "Incorrect data input"
         console.log("Incorrect data input.")
         return
       }
@@ -139,21 +147,100 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-h3 {
-  margin: 40px 0 0;
+h1 {
+  text-align: center;
+  color: white;
+  width: 40%;
+  display: block;
+  margin: 6vh auto;
 }
 
-ul {
-  list-style-type: none;
-  padding: 0;
+.div-login, .div-register {
+  text-align: center;
+  width: 30%;
+  height: 25vh;
+  margin: 6vh auto;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  box-shadow: 20px 20px 50px rgba(0, 0, 0, 0.5);
+  border-top: 2px solid rgba(255, 255, 255, 0.1);
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
 }
 
-li {
-  display: inline-block;
-  margin: 0 10px;
+.div-register {
+  height: 33vh;
+}
+
+.div-login input, .div-register input {
+  width: 50%;
+  height: 40px;
+  border-radius: 25px;
+  box-shadow: 0 0 5px #34eb92,
+  0 0 10px #34eb92,
+  0 0 15px #34eb92;
+  background: rgba(0, 0, 0, 0.5);
+  border-top: 2px solid rgba(255, 255, 255, 0.2);
+  border-left: 2px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 0;
+  border-right: 0;
+  margin-bottom: 10px;
+  outline: none;
+  font-family: 'Prompt', sans-serif;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  padding-left: 20px;
+  margin-top: 20px;
+}
+
+.div-login button, .div-register button {
+  margin-top: 5%;
+  width: 20%;
+  height: 40px;
+  background: #34eb92;
+  color: black;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'Prompt', sans-serif;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5),
+  0 0 10px rgba(0, 0, 0, 0.5),
+  0 0 15px rgba(0, 0, 0, 0.5);
+  border: none;
+}
+
+.div-login button:hover, .div-register button:hover {
+  cursor: pointer;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5),
+  0 0 15px rgba(0, 0, 0, 0.5),
+  0 0 25px rgba(0, 0, 0, 0.5),
+  0 0 35px rgba(0, 0, 0, 0.5),
+  0 0 45px rgba(0, 0, 0, 0.5);
+}
+
+.div-a {
+  width: 30%;
+  margin: 6vh auto;
+  text-align: center;
+}
+
+p {
+  font-size: 20px;
+  color: white;
 }
 
 a {
-  color: #42b983;
+  color: #34eb92;
 }
+
+a:hover {
+  cursor: pointer;
+}
+
+.div-register p {
+  margin-top: 30px;
+  display: block;
+  color: #ff6767;
+}
+
 </style>
