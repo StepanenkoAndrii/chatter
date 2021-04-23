@@ -320,13 +320,14 @@ export default {
         query: createdMessageSub,
         result({data}) {
           console.log(data.messageCreated)
-          this.messages.push(data.messageCreated);
+          this.messages.push(data.messageCreated)
+          this.scrollToBottom()
         },
       },
       roomCreation: {
         query: createdRoomSub,
         result({data}) {
-          this.rooms.push(data.roomCreated);
+          this.rooms.push(data.roomCreated)
         },
       },
       roomChange: {
@@ -384,6 +385,12 @@ export default {
     //   chosenRoom.active = !chosenRoom.active
     //   this.$set(this.rooms, specificIndex, chosenRoom)
     // },
+
+    //scroll to bottom
+    async scrollToBottom() {
+      var container = await this.$el.querySelector(".div-messages-container");
+      container.scrollTop = container.scrollHeight;
+    },
 
     //logout
     async logout() {
@@ -514,6 +521,7 @@ export default {
       this.members = this.room.members
       this.messages = this.room.lastMessages
       this.isChatOwner = this.me.username === this.room.owner.username
+      await this.scrollToBottom()
       // let specificIndex = -1;
       // console.log(this.id)
       // this.rooms.forEach((room, roomIndex) =>
@@ -679,20 +687,6 @@ export default {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-/*.div-message-author::-webkit-scrollbar-track {*/
-/*  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);*/
-/*  border-radius: 2px;*/
-/*}*/
-
-/*.div-message-author::-webkit-scrollbar {*/
-/*  width: 3px;*/
-/*}*/
-
-/*.div-message-author::-webkit-scrollbar-thumb {*/
-/*  border-radius: 2px;*/
-/*  background-color: rgba(255, 255, 255, 0.1);*/
-/*}*/
-
 .div-chat-info, .div-no-messages {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 20px;
@@ -732,6 +726,7 @@ export default {
   background: rgba(0, 0, 0, 0.2);
   border: none;
   color: white;
+  overflow: hidden;
   font-family: "Prompt", sans-serif;
 }
 
