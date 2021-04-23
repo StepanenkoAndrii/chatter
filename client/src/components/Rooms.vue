@@ -307,6 +307,10 @@ export default {
     const userCred = await this.$apollo.query({
       query: userInfo
     })
+    // await this.$apollo.mutate({
+    //   fetchPolicy: "no-cache",
+    //   mutation: leaveRoom,
+    // })
     this.me = userCred.data.me
     this.rooms = rooms.data.rooms
   },
@@ -449,6 +453,7 @@ export default {
     async createNewChat() {
       this.modalIsHidden = true
       const newRoom = await this.$apollo.mutate({
+        fetchPolicy: "no-cache",
         mutation: newRoomCreation,
         variables: {
           roomName: this.roomName,
@@ -488,34 +493,27 @@ export default {
       })
       // await this.leaveRoom()
       this.mesIsHidden = true
-      // this.me.currentRoom = null
+      this.me.currentRoom = null
+      this.room = null
       console.log(deletedRoom.data)
     },
 
     //show room's messages
     async showMessages(e) {
-      const userCred = await this.$apollo.query({
-        query: userInfo
-      })
-      this.me = userCred.data.me
-      console.log(userCred.data.me.username)
-      console.log(userCred.data.me.currentRoom)
-      console.log("1")
-      if (userCred.data.me.currentRoom) {
-        console.log("1.5")
+      this.me.currentRoom = this.room
+      console.log(this.me.currentRoom)
+      if (this.me.currentRoom) {
+        console.log("here")
         await this.leaveRoom()
       }
-      console.log("2")
       this.mesIsHidden = false
       console.log(e.target.id)
       this.id = e.target.id
-      console.log(userCred.data.me.username)
-      console.log("3")
       this.room = await this.joinRoom()
-      console.log("here")
+      console.log("here 2")
       this.members = this.room.members
       this.messages = this.room.lastMessages
-      this.isChatOwner = userCred.data.me.username === this.room.owner.username
+      this.isChatOwner = this.me.username === this.room.owner.username
       // let specificIndex = -1;
       // console.log(this.id)
       // this.rooms.forEach((room, roomIndex) =>
