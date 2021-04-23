@@ -344,11 +344,12 @@ export default {
       roomDeletion: {
         query: deletedRoomSub,
         result({data}) {
-          let specificIndex = -1;
+          this.mesIsHidden = true
+          let specificIndex = -1
           this.rooms.forEach((room, roomIndex) =>
               room.id === data.roomDeleted.id ? (specificIndex = roomIndex) : ""
           );
-          this.rooms.splice(specificIndex, 1);
+          this.rooms.splice(specificIndex, 1)
         },
       },
       joinedUser: {
