@@ -9,7 +9,7 @@ Vue.use(VueApollo)
 const AUTH_TOKEN = 'apollo-token'
 
 // Http endpoint
-const httpEndpoint = process.env.VUE_APP_GRAPHQL_HTTP || 'http://webprogbase-lab6-graphql.herokuapp.com/'
+const httpEndpoint = process.env.VUE_APP_GRAPHQL_HTTP || 'https://webprogbase-lab6-graphql.herokuapp.com/'
 
 // Config
 const defaultOptions = {
@@ -18,7 +18,7 @@ const defaultOptions = {
   // You can use `wss` for secure connection (recommended in production)
   // Use `null` to disable subscriptions
   // wsEndpoint: process.env.VUE_APP_GRAPHQL_WS || 'ws://webprogbase-lab6-graphql.herokuapp.com/graphql',
-  wsEndpoint: 'ws://webprogbase-lab6-graphql.herokuapp.com/graphql',
+  wsEndpoint: 'wss://webprogbase-lab6-graphql.herokuapp.com/graphql',
   // LocalStorage token
   tokenName: AUTH_TOKEN,
   // Enable Automatic Query persisting with Apollo Engine
